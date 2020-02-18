@@ -8,7 +8,14 @@
 	{
 		"outputFileName": "wwwroot/js/site.min.js",
 		"inputFiles": [
+			// External
+			"node_modules/jquery/dist/jquery.min.js",
+			"node_modules/vue/dist/vue.min.js",
+			"node_modules/vue/dist/vue.runtime.min.js",
 
+			// Project
+			"Scripts/Main.js",
+			"Scripts/Modules/Drawing.js"
 		],
 		"minify": {
 			"enabled": true,

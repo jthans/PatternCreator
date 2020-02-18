@@ -24,6 +24,10 @@ namespace PatternCreator
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
+
+                // Allow File Browsing/File Viewing in Development.
+                app.UseDirectoryBrowser();
+                app.UseStaticFiles();
             }
 
             // Configure Routing
