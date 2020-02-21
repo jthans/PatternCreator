@@ -26,7 +26,7 @@ namespace PatternCreator
                 app.UseDeveloperExceptionPage();
 
                 // Allow File Browsing/File Viewing in Development.
-                app.UseDirectoryBrowser();
+                // app.UseDirectoryBrowser();
                 app.UseStaticFiles();
             }
 
