@@ -18,12 +18,15 @@
 			this.context = this.c.getContext('2d');
 
 			this.gridDots = [];
-			this.gridDotDiameter = 10;
+			this.gridDotDiameter = 10.0;
 			this.gridEnabled = true;
 
 			this.mouseDown = false;
 			this.mouseX = 0;
 			this.mouseY = 0;
+
+			this.closestNode = null
+			this.selectedNode = null
 
 			this.registerEvents();
 			this.reDraw();
@@ -47,10 +50,22 @@
 			}
 		}
 
-		drawComponent() {
+		drawComponent(comp) {
 			// Determine brush shape.
-			this.ctx.lineCap = 'round';
-			this.ctx.lineJoin = 'round';
+			this.context.lineCap = 'round';
+			this.context.lineJoin = 'round';
+
+			this.context.strokeStyle = 'rgba(0, 0, 0, 1)';
+			this.context.lineWidth = 4;
+
+			this.context.beginPath();
+
+			this.context.moveTo(comp.x1, comp.y1);
+			this.context.lineTo(comp.x2, comp.y2);
+
+			this.context.stroke();
+
+			this.context.closePath();
 		}
 
 		drawGridDots() {
@@ -61,14 +76,16 @@
 			for (var i = 0; i < this.gridDots.length; i++) {
 				this.context.beginPath();
 
+				var dotSize = this.gridDotDiameter;
+				var fillColor = defaultFillStyle;
+
 				if (this.gridDots[i].selected) {
-					this.context.rect(this.gridDots[i].xLoc, this.gridDots[i].yLoc, 15, 15);
-					this.context.fillStyle = selectedFillStyle;
+					dotSize = 15;
+					fillColor = selectedFillStyle;
 				}
-				else {
-					this.context.rect(this.gridDots[i].xLoc, this.gridDots[i].yLoc, this.gridDotDiameter, this.gridDotDiameter);
-					this.context.fillStyle = defaultFillStyle;
-				}
+
+				this.context.rect(this.gridDots[i].xLoc - (dotSize / 2.0), this.gridDots[i].yLoc - (dotSize / 2.0), dotSize, dotSize);
+				this.context.fillStyle = fillColor;
 
 				this.context.fill();
 				this.context.closePath();
@@ -96,53 +113,83 @@
 		registerEvents() {
 			// Mouse Click
 			this.c.addEventListener('mousedown', (e) => {
+				if (!isNull(this.closestNode) &&
+					!isNull(this.selectedNode)) {
+					// "Harden" the given line.
+					App.drawnComponents[0].isDrawn = true;
+					App.drawnComponents[0].x2 = this.closestNode.xLoc;
+					App.drawnComponents[0].y2 = this.closestNode.yLoc;
 
+					this.selectedNode = null;
+				} else if (!isNull(this.closestNode)) {
+					this.selectedNode = this.closestNode;
+				}
+
+				this.reDraw();
 			});
 
 			// Mouse Click
 			this.c.addEventListener('mousemove', (e) => {
-				this.gridDots.forEach((item, i) => { item.selected = false; });
+				this.mouseX = e.offsetX;
+				this.mouseY = e.offsetY;
 
-				// Search for the closest dot.
-				var closestDotX = 0;
-				var closestDotXLoc = 99999;
-
-				// Iterate horizontally until we find the closest mapped X coordinate.
-				for (var i = 0; i < App.gridSizeX; i++) {
-					if (closestDotXLoc !== 99999 &&
-						Math.abs(this.gridDots[i].xLoc - e.offsetX) > closestDotXLoc) {
-						break;
+				if (!isNull(this.selectedNode)) {
+					if (App.drawnComponents.length > 0 &&
+						!App.drawnComponents[0].isDrawn) {
+						App.drawnComponents.splice(0, 1);
 					}
 
-					if (Math.abs(this.gridDots[i].xLoc - e.offsetX) < closestDotXLoc) {
-						closestDotX = i;
-						closestDotXLoc = Math.abs(this.gridDots[i].xLoc - e.offsetX);
-					}
+					App.drawnComponents.unshift(new Line(this.selectedNode.xLoc, this.selectedNode.yLoc, this.mouseX, this.mouseY));
 				}
 
-				var closestDotY = 0;
-				var closestDotYLoc = 99999;
-				
-				// Now iterate vertically to find the closest Y coordinate.
-				for (var j = 0; j < App.gridSizeY - 1; j++) {
-					if (closestDotYLoc !== 99999 &&
-						Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY) > closestDotYLoc) {
-						break;
+				if (this.gridEnabled) {
+					this.gridDots.forEach((item, i) => { item.selected = false; });
+
+					// Search for the closest dot.
+					var closestDotX = 0;
+					var closestDotXLoc = 99999;
+
+					// Iterate horizontally until we find the closest mapped X coordinate.
+					for (var i = 0; i < App.gridSizeX; i++) {
+						if (closestDotXLoc !== 99999 &&
+							Math.abs(this.gridDots[i].xLoc - e.offsetX) > closestDotXLoc) {
+							break;
+						}
+
+						if (Math.abs(this.gridDots[i].xLoc - e.offsetX) < closestDotXLoc) {
+							closestDotX = i;
+							closestDotXLoc = Math.abs(this.gridDots[i].xLoc - e.offsetX);
+						}
 					}
 
-					if (Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY) < closestDotYLoc) {
-						closestDotY = j;
-						closestDotYLoc = Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY);
+					var closestDotY = 0;
+					var closestDotYLoc = 99999;
+
+					// Now iterate vertically to find the closest Y coordinate.
+					for (var j = 0; j < App.gridSizeY - 1; j++) {
+						if (closestDotYLoc !== 99999 &&
+							Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY) > closestDotYLoc) {
+							break;
+						}
+
+						if (Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY) < closestDotYLoc) {
+							closestDotY = j;
+							closestDotYLoc = Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY);
+						}
 					}
-				}
 
-				// If the grid dot is within our range we need to highlight it as selected.
-				if (closestDotXLoc <= App.gridDotTolerance &&
-					closestDotYLoc <= App.gridDotTolerance) {
-					this.gridDots[(closestDotY * (App.gridSizeX - 1)) + closestDotX].selected = true;
-				}
+					// If the grid dot is within our range we need to highlight it as selected.
+					if (closestDotXLoc <= App.gridDotTolerance &&
+						closestDotYLoc <= App.gridDotTolerance) {
+						this.gridDots[(closestDotY * (App.gridSizeX - 1)) + closestDotX].selected = true;
+						this.closestNode = this.gridDots[(closestDotY * (App.gridSizeX - 1)) + closestDotX];
+					}
+					else {
+						this.closestNode = null
+					}
 
-				this.reDraw();
+					this.reDraw();
+				}
 			});
 		}
 
@@ -151,6 +198,17 @@
 			this.c.width =	this.c.getBoundingClientRect().width;
 		}
 	};
+
+	class Line {
+		constructor(xValOne, yValOne, xValTwo, yValTwo, isDrawn = false) {
+			this.x1 = xValOne;
+			this.y1 = yValOne;
+			this.x2 = xValTwo;
+			this.y2 = yValTwo;
+
+			this.isDrawn = isDrawn;
+		}
+	}
 
 	var drawClass = new Draw();
 });
