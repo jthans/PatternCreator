@@ -123,6 +123,9 @@
 					this.selectedNode = null;
 				} else if (!isNull(this.closestNode)) {
 					this.selectedNode = this.closestNode;
+				} else if (!isNull(this.selectedNode)) {
+					App.drawnComponents.splice(0, 1);
+					this.selectedNode = null;
 				}
 
 				this.reDraw();
