@@ -29,5 +29,5 @@ function isNull(obj) {
 //  transposal of the coordinates and still being recognized the same.  (Storage not in X, Y.)
 function isPair(points, p1, p2) {
 	return (points[0] == p1 && points[1] == p2) ||
-		(points[1] == p1 && points[0] == [2]);
+		(points[1] == p1 && points[0] == p2);
 }

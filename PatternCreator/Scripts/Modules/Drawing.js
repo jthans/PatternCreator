@@ -184,6 +184,9 @@
 
 						this.selectedNode = null;
 						this.calculatePolygons();
+					} else {
+						App.drawnComponents.splice(0, 1);
+						this.selectedNode = null;
 					}
 				} else if (!isNull(this.closestNode)) {
 					this.selectedNode = this.closestNode;
