@@ -146,11 +146,6 @@
 			return finalLines;
 		}
 
-		isPair(points, p1, p2) {
-			return (points[0] == p1 && points[1] == p2) ||
-					(points[1] == p1 && points[0] == [2]);
-		}
-
 		reDraw() {
 			this.resizeCanvas();
 
@@ -174,15 +169,17 @@
 			this.c.addEventListener('mousedown', (e) => {
 				if (!isNull(this.closestNode) &&
 					!isNull(this.selectedNode)) {
-					// "Harden" the given line.
-					App.drawnComponents[0].isDrawn = true;
-					App.drawnComponents[0].x2 = this.closestNode.xLoc;
-					App.drawnComponents[0].y2 = this.closestNode.yLoc;
-					App.drawnComponents[0].points = [this.selectedNode.index, this.closestNode.index];
+					var matchingLine = App.drawnComponents.filter(line => line.isDrawn && isPair(line.points, this.selectedNode.index, this.closestNode.index));
+					if (isNull(matchingLine)) {
+						// "Harden" the given line.
+						App.drawnComponents[0].isDrawn = true;
+						App.drawnComponents[0].x2 = this.closestNode.xLoc;
+						App.drawnComponents[0].y2 = this.closestNode.yLoc;
+						App.drawnComponents[0].points = [this.selectedNode.index, this.closestNode.index];
 
-					this.selectedNode = null;
-
-					this.calculatePolygons();
+						this.selectedNode = null;
+						this.calculatePolygons();
+					}
 				} else if (!isNull(this.closestNode)) {
 					this.selectedNode = this.closestNode;
 				} else if (!isNull(this.selectedNode)) {
@@ -272,7 +269,6 @@
 			this.y2 = yValTwo;
 
 			this.points = points;
-
 			this.isDrawn = isDrawn;
 		}
 	}
