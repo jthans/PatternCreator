@@ -47,8 +47,13 @@
 			if (nextPoint == origPoint &&
 				visitedNodes.length > 1) {
 				visitedNodes.unshift(origPoint);
-				App.drawnPolygons.unshift(new Polygon(visitedNodes));
-				return true;
+
+				if (isNull(App.drawnPolygons.filter(poly => areArraysEqual(poly.points, visitedNodes)))) {
+					App.drawnPolygons.unshift(new Polygon(visitedNodes));
+					return true;
+				}
+
+				return false;
 			}
 
 			if (isNull(nextLines)) {
