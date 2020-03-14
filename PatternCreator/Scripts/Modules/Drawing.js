@@ -13,7 +13,7 @@
 		}
 	});
 
-	class Draw {	
+	class Draw {
 		constructor() {
 			this.c = $('#drawCanvas')[0];
 			this.context = this.c.getContext('2d');
@@ -35,15 +35,17 @@
 
 		calculatePolygons() {
 			for (var i = 0; i < this.gridDots.length; i++) {
-				this.calculatePolygonLoop(null, this.gridDots[i].index, []);
+				this.calculatePolygonLoop(this.gridDots[i].index, this.gridDots[i].index, []);
 			}
 
 			alert(JSON.stringify(App.drawnPolygons));
 		}
 
 		calculatePolygonLoop(nextPoint, origPoint, visitedNodes) {
-			var nextLines = this.getLinesWithPoint(nextPoint, visitedNodes);
-			if (nextPoint = origPoint) {
+			var nextLines = this.getLinesWithPoint(nextPoint, origPoint, visitedNodes); 
+
+			if (nextPoint == origPoint &&
+				visitedNodes.length > 1) {
 				visitedNodes.unshift(origPoint);
 				App.drawnPolygons.unshift(new Polygon(visitedNodes));
 				return true;
@@ -52,12 +54,15 @@
 			if (isNull(nextLines)) {
 				return false;
 			}
-
+			
 			for (var i = 0; i < nextLines.length; i++) {
-				visitedNodes.unshift(nextPoint);
+				if (nextPoint != origPoint) {
+					visitedNodes.unshift(nextPoint);
+				}
+				
 				return this.calculatePolygonLoop(nextLines[i].points[0] == nextPoint ? nextLines[i].points[1] : nextLines[i].points[0],
 													origPoint,
-													visitedNodes);
+													visitedNodes.slice());
 			}
 		}
 
@@ -123,20 +128,27 @@
 			}
 		};
 
-		getLinesWithPoint(pointNum, visitedNodes) {
+		getLinesWithPoint(pointNum, origPoint, visitedNodes) {
 			var foundLines = App.drawnComponents.filter(line => line.points.includes(pointNum));
 			var finalLines = [];
 
 			for (var i = 0; i < foundLines.length; i++) {
-				if ((foundLines[i].points[0] == pointNum &&
+				if (((foundLines[i].points[0] == pointNum &&
 					 !visitedNodes.includes(foundLines[i].points[1])) ||
 					(foundLines[i].points[1] == pointNum &&
-					 !visitedNodes.includes(foundLines[i].points[0]))) {
+						!visitedNodes.includes(foundLines[i].points[0]))) &&
+					(!foundLines[i].points.includes(origPoint) ||
+						visitedNodes.length != 1)) {
 					finalLines.unshift(foundLines[i]);
 				}
 			}
 
 			return finalLines;
+		}
+
+		isPair(points, p1, p2) {
+			return (points[0] == p1 && points[1] == p2) ||
+					(points[1] == p1 && points[0] == [2]);
 		}
 
 		reDraw() {
@@ -166,9 +178,11 @@
 					App.drawnComponents[0].isDrawn = true;
 					App.drawnComponents[0].x2 = this.closestNode.xLoc;
 					App.drawnComponents[0].y2 = this.closestNode.yLoc;
-					App.drawnComponents[0].points = [this.selectedNode, this.closestNode];
+					App.drawnComponents[0].points = [this.selectedNode.index, this.closestNode.index];
 
 					this.selectedNode = null;
+
+					this.calculatePolygons();
 				} else if (!isNull(this.closestNode)) {
 					this.selectedNode = this.closestNode;
 				} else if (!isNull(this.selectedNode)) {
@@ -177,7 +191,6 @@
 				}
 
 				this.reDraw();
-				this.calculatePolygons();
 			});
 
 			// Mouse Click
