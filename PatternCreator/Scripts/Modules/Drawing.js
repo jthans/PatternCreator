@@ -5,14 +5,15 @@
 			gridSizeX: 12, // how many grid squares horizontally
 			gridSizeY: 12, // how many grid squares vertically
 			gridDotTolerance: 20, // number of pixels that trigger dot selection.
-			drawnComponents: [] // any components that have been drawn on the screen
+			drawnComponents: [], // any components that have been drawn on the screen
+			drawnPolygons: [] // all detected polygons on this pattern, to be calculated.
 		},
 		methods: {
 
 		}
 	});
 
-	class Draw {
+	class Draw {	
 		constructor() {
 			this.c = $('#drawCanvas')[0];
 			this.context = this.c.getContext('2d');
@@ -32,8 +33,37 @@
 			this.reDraw();
 		};
 
+		calculatePolygons() {
+			for (var i = 0; i < this.gridDots.length; i++) {
+				this.calculatePolygonLoop(null, this.gridDots[i].index, []);
+			}
+
+			alert(JSON.stringify(App.drawnPolygons));
+		}
+
+		calculatePolygonLoop(nextPoint, origPoint, visitedNodes) {
+			var nextLines = this.getLinesWithPoint(nextPoint, visitedNodes);
+			if (nextPoint = origPoint) {
+				visitedNodes.unshift(origPoint);
+				App.drawnPolygons.unshift(new Polygon(visitedNodes));
+				return true;
+			}
+
+			if (isNull(nextLines)) {
+				return false;
+			}
+
+			for (var i = 0; i < nextLines.length; i++) {
+				visitedNodes.unshift(nextPoint);
+				return this.calculatePolygonLoop(nextLines[i].points[0] == nextPoint ? nextLines[i].points[1] : nextLines[i].points[0],
+													origPoint,
+													visitedNodes);
+			}
+		}
+
 		createGridDots() {
 			// Draw a dot for each point needed in the grid.
+			var dotIndex = 0;
 			for (var i = 1; i < App.gridSizeY; i++) {
 				var yLoc = i * (this.c.height / App.gridSizeY);
 
@@ -42,6 +72,7 @@
 
 					// Add the new dot to the cache.
 					this.gridDots.push({
+						index: dotIndex++,
 						xLoc: xLoc,
 						yLoc: yLoc,
 						selected: false
@@ -92,6 +123,22 @@
 			}
 		};
 
+		getLinesWithPoint(pointNum, visitedNodes) {
+			var foundLines = App.drawnComponents.filter(line => line.points.includes(pointNum));
+			var finalLines = [];
+
+			for (var i = 0; i < foundLines.length; i++) {
+				if ((foundLines[i].points[0] == pointNum &&
+					 !visitedNodes.includes(foundLines[i].points[1])) ||
+					(foundLines[i].points[1] == pointNum &&
+					 !visitedNodes.includes(foundLines[i].points[0]))) {
+					finalLines.unshift(foundLines[i]);
+				}
+			}
+
+			return finalLines;
+		}
+
 		reDraw() {
 			this.resizeCanvas();
 
@@ -119,6 +166,7 @@
 					App.drawnComponents[0].isDrawn = true;
 					App.drawnComponents[0].x2 = this.closestNode.xLoc;
 					App.drawnComponents[0].y2 = this.closestNode.yLoc;
+					App.drawnComponents[0].points = [this.selectedNode, this.closestNode];
 
 					this.selectedNode = null;
 				} else if (!isNull(this.closestNode)) {
@@ -129,6 +177,7 @@
 				}
 
 				this.reDraw();
+				this.calculatePolygons();
 			});
 
 			// Mouse Click
@@ -203,13 +252,21 @@
 	};
 
 	class Line {
-		constructor(xValOne, yValOne, xValTwo, yValTwo, isDrawn = false) {
+		constructor(xValOne, yValOne, xValTwo, yValTwo, points = null, isDrawn = false) {
 			this.x1 = xValOne;
 			this.y1 = yValOne;
 			this.x2 = xValTwo;
 			this.y2 = yValTwo;
 
+			this.points = points;
+
 			this.isDrawn = isDrawn;
+		}
+	}
+
+	class Polygon {
+		constructor(points) {
+			this.points = points;
 		}
 	}
 
