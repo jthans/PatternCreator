@@ -38,7 +38,7 @@
 				this.calculatePolygonLoop(this.gridDots[i].index, this.gridDots[i].index, []);
 			}
 
-			alert(JSON.stringify(App.drawnPolygons));
+			console.log(JSON.stringify(App.drawnPolygons));
 		}
 
 		calculatePolygonLoop(nextPoint, origPoint, visitedNodes) {
@@ -46,7 +46,7 @@
 
 			if (nextPoint == origPoint &&
 				visitedNodes.length > 1) {
-
+				console.log("Adding Polygon");
 				if (isNull(App.drawnPolygons.filter(poly => areArraysEqual(poly.points, visitedNodes)))) {
 					App.drawnPolygons.unshift(new Polygon(visitedNodes));
 					return true;
@@ -60,12 +60,14 @@
 			}
 			
 			for (var i = 0; i < nextLines.length; i++) {
+				var visitedNodesCopy = [...visitedNodes];
 				var visitedNode = nextLines[i].points[0] == nextPoint ? nextLines[i].points[1] : nextLines[i].points[0];
-				visitedNodes.unshift(visitedNode);
-				
-				return this.calculatePolygonLoop(visitedNode,
-													origPoint,
-													visitedNodes.slice());
+				visitedNodesCopy.unshift(visitedNode);
+
+				console.log("Moving from " + nextPoint + " to " + visitedNode + " from original point " + origPoint + ". Visited: " + JSON.stringify(visitedNodesCopy));
+				this.calculatePolygonLoop(visitedNode,
+											origPoint,
+											visitedNodesCopy);
 			}
 		}
 
@@ -145,7 +147,7 @@
 					finalLines.unshift(foundLines[i]);
 				}
 			}
-
+			
 			return finalLines;
 		}
 
