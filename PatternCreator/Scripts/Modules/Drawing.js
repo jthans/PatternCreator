@@ -46,7 +46,6 @@
 
 			if (nextPoint == origPoint &&
 				visitedNodes.length > 1) {
-				visitedNodes.unshift(origPoint);
 
 				if (isNull(App.drawnPolygons.filter(poly => areArraysEqual(poly.points, visitedNodes)))) {
 					App.drawnPolygons.unshift(new Polygon(visitedNodes));
@@ -61,11 +60,10 @@
 			}
 			
 			for (var i = 0; i < nextLines.length; i++) {
-				if (nextPoint != origPoint) {
-					visitedNodes.unshift(nextPoint);
-				}
+				var visitedNode = nextLines[i].points[0] == nextPoint ? nextLines[i].points[1] : nextLines[i].points[0];
+				visitedNodes.unshift(visitedNode);
 				
-				return this.calculatePolygonLoop(nextLines[i].points[0] == nextPoint ? nextLines[i].points[1] : nextLines[i].points[0],
+				return this.calculatePolygonLoop(visitedNode,
 													origPoint,
 													visitedNodes.slice());
 			}
@@ -173,7 +171,8 @@
 			// Mouse Click
 			this.c.addEventListener('mousedown', (e) => {
 				if (!isNull(this.closestNode) &&
-					!isNull(this.selectedNode)) {
+					!isNull(this.selectedNode) &&
+					this.closestNode != this.selectedNode) {
 					var matchingLine = App.drawnComponents.filter(line => line.isDrawn && isPair(line.points, this.selectedNode.index, this.closestNode.index));
 					if (isNull(matchingLine)) {
 						// "Harden" the given line.
