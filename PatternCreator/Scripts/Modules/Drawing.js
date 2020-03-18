@@ -4,7 +4,8 @@
 		data: {
 			gridSizeX: 12, // how many grid squares horizontally
 			gridSizeY: 12, // how many grid squares vertically
-			gridDotTolerance: 20, // number of pixels that trigger dot selection.
+			gridDotTolerance: 20, // number of pixels that trigger dot selection.ontext('2d');
+			gridDots: [], // List of dots available in the App currently.
 			drawnComponents: [], // any components that have been drawn on the screen
 			drawnPolygons: [] // all detected polygons on this pattern, to be calculated.
 		},
@@ -16,9 +17,8 @@
 	class Draw {
 		constructor() {
 			this.c = $('#drawCanvas')[0];
-			this.context = this.c.getContext('2d');
+			this.context = this.c.getContext("2d");
 
-			this.gridDots = [];
 			this.gridDotDiameter = 10.0;
 			this.gridEnabled = true;
 
@@ -34,10 +34,11 @@
 		};
 
 		calculatePolygons() {
-			for (var i = 0; i < this.gridDots.length; i++) {
-				this.calculatePolygonLoop(this.gridDots[i].index, this.gridDots[i].index, []);
+			for (var i = 0; i < App.gridDots.length; i++) {
+				this.calculatePolygonLoop(App.gridDots[i].index, App.gridDots[i].index, []);
 			}
 
+			this.cleanupPolygons();
 			console.log(JSON.stringify(App.drawnPolygons));
 		}
 
@@ -46,7 +47,6 @@
 
 			if (nextPoint == origPoint &&
 				visitedNodes.length > 1) {
-				console.log("Adding Polygon");
 				if (isNull(App.drawnPolygons.filter(poly => areArraysEqual(poly.points, visitedNodes)))) {
 					App.drawnPolygons.unshift(new Polygon(visitedNodes));
 					return true;
@@ -63,17 +63,40 @@
 				var visitedNodesCopy = [...visitedNodes];
 				var visitedNode = nextLines[i].points[0] == nextPoint ? nextLines[i].points[1] : nextLines[i].points[0];
 				visitedNodesCopy.unshift(visitedNode);
-
-				console.log("Moving from " + nextPoint + " to " + visitedNode + " from original point " + origPoint + ". Visited: " + JSON.stringify(visitedNodesCopy));
+				
 				this.calculatePolygonLoop(visitedNode,
 											origPoint,
 											visitedNodesCopy);
 			}
 		}
 
+		cleanupPolygons() {
+			App.drawnPolygons.sort((a, b) => (a.points.length > b.points.length) ? 1 : -1); // Sorts the list of polygons by # of points, to make the algorithm a little more efficient.
+			for (var i = 0; i < App.drawnPolygons.length; i++) {
+				for (var j = 0; j < App.drawnPolygons.length; j++) {
+					if (i == j) {
+						continue; // We don't need to compare this polygon to itself.
+					}
+
+					var nonIntersectingPoints = App.drawnPolygons[i].points.filter(p => !App.drawnPolygons[j].points.includes(p));
+					if (nonIntersectingPoints.length == App.drawnPolygons[i].points.length) {
+						continue; // If this shape isn't touching other ones, we won't have any issues in merging polygons together.
+					}
+
+					for (var p = 0; p < nonIntersectingPoints.length; p++) {
+						if (App.drawnPolygons[j].containsPoint(nonIntersectingPoints[p])) {
+							App.drawnPolygons[j].isNested = true;
+							break;
+						}
+					}
+				}
+			}
+
+			App.drawnPolygons = App.drawnPolygons.filter(p => !p.isNested);
+		}
+
 		createGridDots() {
 			// Draw a dot for each point needed in the grid.
-			var dotIndex = 0;
 			for (var i = 1; i < App.gridSizeY; i++) {
 				var yLoc = i * (this.c.height / App.gridSizeY);
 
@@ -81,8 +104,8 @@
 					var xLoc = j * (this.c.width / App.gridSizeX);
 
 					// Add the new dot to the cache.
-					this.gridDots.push({
-						index: dotIndex++,
+					App.gridDots.push({
+						index: App.gridDots.length,
 						xLoc: xLoc,
 						yLoc: yLoc,
 						selected: false
@@ -114,18 +137,18 @@
 			var selectedFillStyle = 'rgba(0, 0, 128, .2)';
 			this.context.fillStyle = defaultFillStyle;
 
-			for (var i = 0; i < this.gridDots.length; i++) {
+			for (var i = 0; i < App.gridDots.length; i++) {
 				this.context.beginPath();
 
 				var dotSize = this.gridDotDiameter;
 				var fillColor = defaultFillStyle;
 
-				if (this.gridDots[i].selected) {
+				if (App.gridDots[i].selected) {
 					dotSize = 15;
 					fillColor = selectedFillStyle;
 				}
 
-				this.context.rect(this.gridDots[i].xLoc - (dotSize / 2.0), this.gridDots[i].yLoc - (dotSize / 2.0), dotSize, dotSize);
+				this.context.rect(App.gridDots[i].xLoc - (dotSize / 2.0), App.gridDots[i].yLoc - (dotSize / 2.0), dotSize, dotSize);
 				this.context.fillStyle = fillColor;
 
 				this.context.fill();
@@ -156,8 +179,8 @@
 
 			this.context.clearRect(0, 0, this.c.width, this.c.height);
 			if (this.gridEnabled) {
-				if (isNull(this.gridDots) ||
-					this.gridDots.length <= 0) {
+				if (isNull(App.gridDots) ||
+					App.gridDots.length <= 0) {
 					this.createGridDots();
 				}
 
@@ -214,7 +237,7 @@
 				}
 
 				if (this.gridEnabled) {
-					this.gridDots.forEach((item, i) => { item.selected = false; });
+					App.gridDots.forEach((item, i) => { item.selected = false; });
 
 					// Search for the closest dot.
 					var closestDotX = 0;
@@ -223,13 +246,13 @@
 					// Iterate horizontally until we find the closest mapped X coordinate.
 					for (var i = 0; i < App.gridSizeX; i++) {
 						if (closestDotXLoc !== 99999 &&
-							Math.abs(this.gridDots[i].xLoc - e.offsetX) > closestDotXLoc) {
+							Math.abs(App.gridDots[i].xLoc - e.offsetX) > closestDotXLoc) {
 							break;
 						}
 
-						if (Math.abs(this.gridDots[i].xLoc - e.offsetX) < closestDotXLoc) {
+						if (Math.abs(App.gridDots[i].xLoc - e.offsetX) < closestDotXLoc) {
 							closestDotX = i;
-							closestDotXLoc = Math.abs(this.gridDots[i].xLoc - e.offsetX);
+							closestDotXLoc = Math.abs(App.gridDots[i].xLoc - e.offsetX);
 						}
 					}
 
@@ -239,21 +262,21 @@
 					// Now iterate vertically to find the closest Y coordinate.
 					for (var j = 0; j < App.gridSizeY - 1; j++) {
 						if (closestDotYLoc !== 99999 &&
-							Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY) > closestDotYLoc) {
+							Math.abs(App.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY) > closestDotYLoc) {
 							break;
 						}
 
-						if (Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY) < closestDotYLoc) {
+						if (Math.abs(App.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY) < closestDotYLoc) {
 							closestDotY = j;
-							closestDotYLoc = Math.abs(this.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY);
+							closestDotYLoc = Math.abs(App.gridDots[(j * (App.gridSizeX - 1)) + closestDotX].yLoc - e.offsetY);
 						}
 					}
 
 					// If the grid dot is within our range we need to highlight it as selected.
 					if (closestDotXLoc <= App.gridDotTolerance &&
 						closestDotYLoc <= App.gridDotTolerance) {
-						this.gridDots[(closestDotY * (App.gridSizeX - 1)) + closestDotX].selected = true;
-						this.closestNode = this.gridDots[(closestDotY * (App.gridSizeX - 1)) + closestDotX];
+						App.gridDots[(closestDotY * (App.gridSizeX - 1)) + closestDotX].selected = true;
+						this.closestNode = App.gridDots[(closestDotY * (App.gridSizeX - 1)) + closestDotX];
 					}
 					else {
 						this.closestNode = null
@@ -284,7 +307,52 @@
 
 	class Polygon {
 		constructor(points) {
+			this.isNested = false;
 			this.points = points;
+		}
+
+		//	Determines if a given point exists within this polygon (within the confines of the lines created). This algorithm was found online, and modified to
+		//   be more efficient for these cases.  For the point given, send a line from the point to the right (positive X) forever.  If this line intersects an odd
+		//   number of lines on the polygon, it is inside the polygon.  If it's none or even, it is outside the polygon.  We'll go on a line-by-line basis here.
+		containsPoint(p) {
+			var pointInQuestion = App.gridDots[p];
+			var numIntersections = 0;
+			var intersectedX = [];
+
+			for (var i = 0; i < this.points.length - 1; i++) {
+				var polyLine = App.drawnComponents.filter(l => isPair(l.points, this.points[i], this.points[i + 1]))[0];
+				var p1 = App.gridDots[polyLine.points[0]];
+				var p2 = App.gridDots[polyLine.points[1]];
+
+				// If this line of the polygon is entirely above or below the point, or if it's to the left of the point, it won't hit the line so skip it.
+				if ((p1.yLoc > pointInQuestion.yLoc && // Line is entirely above the point.
+					 p2.yLoc > pointInQuestion.yLoc) ||
+					(p1.yLoc < pointInQuestion.yLoc && // Line is entirely below the point.
+					 p2.yLoc < pointInQuestion.yLoc) ||
+					(p1.xLoc <= pointInQuestion.xLoc && // Line is entirely to the left of the point.
+					 p2.xLoc <= pointInQuestion.xLoc)) {
+					continue;
+				}
+
+				// Calculating the equation of the line.
+				var lineM = lineSlope(p1, p2);
+				if (lineM == 0) {
+					numIntersections++; // If it's a flat line, it definitely intersects if it's showing up now.
+					continue;
+				}
+
+				var lineB = p2.yLoc - (lineM * p1.xLoc);
+				
+				// Calculate the intersection on the X axis - If it's greater than 
+				var xIntersection = (pointInQuestion.yLoc - lineB) / lineM;
+				if (xIntersection > pointInQuestion.xLoc &&
+					!intersectedX.includes(xIntersection)) {
+					numIntersections++;
+					intersectedX.push(xIntersection);
+				}
+			}
+			
+			return numIntersections % 2 !== 0;
 		}
 	}
 

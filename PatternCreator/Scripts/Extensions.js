@@ -31,3 +31,8 @@ function isPair(points, p1, p2) {
 	return (points[0] == p1 && points[1] == p2) ||
 		(points[1] == p1 && points[0] == p2);
 }
+
+// Calculates the slope of a line. Pretty 8th grade stuff.
+function lineSlope(p1, p2) {
+	return (p2.yLoc - p1.yLoc) / (p2.xLoc - p1.xLoc);
+}
