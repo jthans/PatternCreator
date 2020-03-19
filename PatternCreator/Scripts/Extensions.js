@@ -16,6 +16,13 @@ function areArraysEqual(arrayOne, arrayTwo) {
 	return true;
 }
 
+function getMidpoint(p1, p2) {
+	return {
+		xLoc: (p1.xLoc + p2.xLoc) / 2,
+		yLoc: (p1.yLoc + p2.yLoc) / 2
+	};
+}
+
 // Declares if an object is NULL or not for easy comparisons sake.
 function isNull(obj) {
 	return !(obj !== null &&
