@@ -38,7 +38,6 @@
 				this.calculatePolygonLoop(App.gridDots[i].index, App.gridDots[i].index, []);
 			}
 
-			console.log(JSON.stringify(App.drawnPolygons));
 			this.cleanupPolygons();
 			console.log(JSON.stringify(App.drawnPolygons));
 		}
@@ -74,35 +73,26 @@
 		cleanupPolygons() {
 			App.drawnPolygons.sort((a, b) => (a.points.length > b.points.length) ? 1 : -1); // Sorts the list of polygons by # of points, to make the algorithm a little more efficient.
 			for (var i = 0; i < App.drawnPolygons.length; i++) {
-				console.log("Checking polygon " + i);
 				for (var j = 0; j < App.drawnPolygons.length; j++) {
 					if (i == j ||
 						App.drawnPolygons[i].isNested ||
 						App.drawnPolygons[j].isNested) {
-						console.log(i + " = " + j + " or polygon is already nested.");
 						continue; // We don't need to compare this polygon to itself.
 					}
 
 					var nonIntersectingPoints = App.drawnPolygons[i].points.filter(p => !App.drawnPolygons[j].points.includes(p));
 					if (nonIntersectingPoints.length == App.drawnPolygons[i].points.length) {
-						console.log("This polygon isn't near the other one.");
 						continue; // If this shape isn't touching other ones, we won't have any issues in merging polygons together.
-					} else if (nonIntersectingPoints.length == 0) {
-						console.log("All points intersecting");
-					}
+					} 
 					
 					for (var l = 0; l < App.drawnPolygons[i].points.length; l++) {
 						var thisPoint = App.drawnPolygons[i].points[l];
 						var nextPoint = App.drawnPolygons[i].points[(l + 1) % App.drawnPolygons[i].points.length];
 
-						console.log("Checking for midpoint need of " + thisPoint + "," + nextPoint);
-
 						if (!nonIntersectingPoints.includes(thisPoint) &&
 							!nonIntersectingPoints.includes(nextPoint) &&
 							!App.drawnPolygons[j].containsLine(thisPoint, nextPoint)) {
-							console.log("Adding midpoint of " + thisPoint + "," + nextPoint + " to calculate.");
 							if (App.drawnPolygons[j].containsPoint(getMidpoint(App.gridDots[thisPoint], App.gridDots[nextPoint]))) {
-								console.log("Marking polygon " + j + " as nested");
 								App.drawnPolygons[j].isNested = true;
 								break;
 							}
@@ -115,7 +105,6 @@
 
 					for (var p = 0; p < nonIntersectingPoints.length; p++) {
 						if (App.drawnPolygons[j].containsPoint(App.gridDots[nonIntersectingPoints[p]])) {
-							console.log("Marking polygon " + j + " as nested.");
 							App.drawnPolygons[j].isNested = true;
 							break;
 						}
@@ -355,7 +344,6 @@
 				}
 			}
 
-			console.log("Polygon " + JSON.stringify(this.points) + " doesn't contain line " + p1 + "," + p2);
 			return false;
 		}
 
@@ -363,11 +351,9 @@
 		//   be more efficient for these cases.  For the point given, send a line from the point to the right (positive X) forever.  If this line intersects an odd
 		//   number of lines on the polygon, it is inside the polygon.  If it's none or even, it is outside the polygon.  We'll go on a line-by-line basis here.
 		containsPoint(pointInQuestion) {
-			console.log(JSON.stringify(pointInQuestion));
 			var numIntersections = 0;
 
 			for (var i = 0; i < this.points.length; i++) {
-				console.log("Line " + this.points[i] + ", " + this.points[(i + 1) % this.points.length]);
 				var polyLine = App.drawnComponents.filter(l => isPair(l.points, this.points[i], this.points[(i + 1) % this.points.length]))[0];
 				var p1 = App.gridDots[polyLine.points[0]];
 				var p2 = App.gridDots[polyLine.points[1]];
@@ -395,7 +381,6 @@
 
 				// Calculating the equation of the line.
 				var lineM = lineSlope(p1, p2);
-				console.log(lineM);
 				if (Math.abs(lineM) == Infinity) {
 					if ((p1.yLoc < pointInQuestion.yLoc &&
 						p2.yLoc > pointInQuestion.yLoc) ||
@@ -408,17 +393,14 @@
 				}
 
 				var lineB = p1.yLoc - (lineM * p1.xLoc);
-				console.log(lineB);
 				
 				// Calculate the intersection on the X axis - If it's greater than 
 				var xIntersection = (pointInQuestion.yLoc - lineB) / lineM;
-				console.log(xIntersection);
 				if (xIntersection > pointInQuestion.xLoc) {
 					numIntersections++;
 				}
 			}
 
-			console.log("Point " + JSON.stringify(pointInQuestion) + " in Polygon " + JSON.stringify(this.points) + "? " + numIntersections);
 			return Math.abs(numIntersections) % 2 !== 0;
 		}
 	}
