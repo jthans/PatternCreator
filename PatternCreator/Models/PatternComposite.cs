@@ -1,4 +1,5 @@
 ﻿using Hans.Math.Geometry.Models;
+using PatternCreator.Controllers;
 using System.Collections.Generic;
 
 namespace PatternCreator.Models

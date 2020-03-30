@@ -33,7 +33,9 @@ namespace PatternCreator
             // Configure Routing
             app.UseMvc(routes =>
             {
-                routes.MapRoute("default", "{controller=Home}/{action=Index}/{id?}");
+                routes.MapRoute("default", 
+                                "{controller}/{action}",
+                                new { controller = "Home", action = "Index" });
             });
         }
     }
