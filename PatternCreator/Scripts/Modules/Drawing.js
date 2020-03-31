@@ -2,15 +2,12 @@
 	var App = new Vue({
 		el: '#drawSection',
 		data: {
-			gridSizeX: 12, // how many grid squares horizontally
+			gridSizeX: 20, // how many grid squares horizontally
 			gridSizeY: 12, // how many grid squares vertically
 			gridDotTolerance: 20, // number of pixels that trigger dot selection.ontext('2d');
 			gridDots: [], // List of dots available in the App currently.
 			drawnComponents: [], // any components that have been drawn on the screen
 			drawnPolygons: [] // all detected polygons on this pattern, to be calculated.
-		},
-		methods: {
-
 		}
 	});
 
@@ -406,4 +403,34 @@
 	}
 
 	var drawClass = new Draw();
+
+	$('#button-createPlan').click(function () {
+		var patternPolys = [];
+		for (var i = 0; i < App.drawnPolygons.length; i++) {
+			var polyPoints = [];
+			for (var p = 0; p < App.drawnPolygons[i].points.length; p++) {
+				var thisPoint = App.drawnPolygons[i].points[p];
+				polyPoints.unshift({
+					Index: thisPoint,
+					X: App.gridDots[thisPoint].xLoc,
+					Y: App.gridDots[thisPoint].yLoc
+				})
+			}
+
+			patternPolys.unshift({
+				Vertices: polyPoints
+			})
+		}
+
+		$.ajax({
+			contentType: 'application/json;charset=utf-8',
+			data: JSON.stringify(patternPolys),
+			dataType: 'json',
+			method: 'POST',
+			traditional: true,
+			url: 'CreatePlanFromPattern'
+		}).done(function (result) {
+			alert(JSON.stringify(result));
+		});
+	});
 });
