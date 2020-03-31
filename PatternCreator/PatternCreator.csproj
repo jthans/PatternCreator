@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BuildBundlerMinifier" Version="3.2.435" />
-    <PackageReference Include="Hans.Math" Version="1.0.20200330.13-CI-20200330-215824" />
+    <PackageReference Include="Hans.Math.Standard" Version="1.0.0-CI-20200331-224209" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.1.2" PrivateAssets="All" />
     <PackageReference Include="Microsoft.AspNetCore.StaticFiles" Version="2.1.1" />

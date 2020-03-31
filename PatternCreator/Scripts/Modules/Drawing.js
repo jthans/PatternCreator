@@ -2,7 +2,7 @@
 	var App = new Vue({
 		el: '#drawSection',
 		data: {
-			gridSizeX: 12, // how many grid squares horizontally
+			gridSizeX: 20, // how many grid squares horizontally
 			gridSizeY: 12, // how many grid squares vertically
 			gridDotTolerance: 20, // number of pixels that trigger dot selection.ontext('2d');
 			gridDots: [], // List of dots available in the App currently.

@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Hans.DependencyInjection;
+using Hans.Logging;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace PatternCreator
@@ -37,6 +34,9 @@ namespace PatternCreator
                                 "{controller}/{action}",
                                 new { controller = "Home", action = "Index" });
             });
+
+            MEFBootstrapper.Build();
+            LoggerManager.StartLogging();
         }
     }
 }
